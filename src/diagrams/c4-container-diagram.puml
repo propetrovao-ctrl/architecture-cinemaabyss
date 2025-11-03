@@ -1,0 +1,54 @@
+@startuml CinemaAbyss Container Diagra
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Container diagram - CinemaAbyss
+
+Person(user, "Пользователь", "Пользователь платформы стриминга")
+
+System_Boundary(cinemaabyss, "CinemaAbyss") {
+    Container(proxy, "API Gateway", "Go", "Унифицированная точка входа для всех API запросов")
+    
+    Container(user_service, "Сервис управления пользователями", "Go", "Управление учетными записями пользователей, авторизация")
+    Container(movie_service, "Сервис метаданных фильмов", "Go", "Управление метаданными фильмов, жанрами, актерами, оценками")
+    Container(payment_service, "Сервис обработки платежей", "Go", "Обработка платежей, интеграция с платежными системами")
+    Container(subscription_service, "Сервис управления подписками", "Go", "Управление подписками пользователей, скидками")
+    
+    ContainerQueue(kafka, "Kafka", "Apache Kafka", "Брокер сообщений для асинхронной коммуникации между сервисами\nТопики:\n- user.events\n- payment.events\n- subscription.events\n- movie.events")
+    
+    ContainerDb(user_db, "База данных пользователей", "PostgreSQL", "Хранение данных о пользователях:\n- Пользователи")
+    ContainerDb(movie_db, "База данных метаданных", "PostgreSQL", "Хранение метаданных о фильмах:\n- Видео\n- Метаданные фильмов\n- Жанры\n- Актёры\n- Оценки")
+    ContainerDb(payment_db, "База данных платежей", "PostgreSQL", "Хранение данных о платежах:\n- Платежи")
+    ContainerDb(subscription_db, "База данных подписок", "PostgreSQL", "Хранение данных о подписках:\n- Подписки\n- Скидки")
+}
+
+System_Ext(payment_provider, "Платежная система", "Внешний платежный провайдер")
+
+Rel(user, proxy, "Использует", "HTTPS")
+Rel(proxy, user_service, "Перенаправляет запросы", "HTTP")
+Rel(proxy, movie_service, "Перенаправляет запросы", "HTTP")
+Rel(proxy, payment_service, "Перенаправляет запросы", "HTTP")
+Rel(proxy, subscription_service, "Перенаправляет запросы", "HTTP")
+
+Rel(user_service, user_db, "Читает/Записывает", "SQL")
+Rel(movie_service, movie_db, "Читает/Записывает", "SQL")
+Rel(payment_service, payment_db, "Читает/Записывает", "SQL")
+Rel(subscription_service, subscription_db, "Читает/Записывает", "SQL")
+
+Rel(payment_service, payment_provider, "Обрабатывает платежи", "HTTPS")
+
+' Асинхронная коммуникация через Kafka
+Rel(user_service, kafka, "Публикует события пользователей", "Kafka Protocol")
+Rel(payment_service, kafka, "Публикует события платежей", "Kafka Protocol")
+Rel(subscription_service, kafka, "Публикует события подписок", "Kafka Protocol")
+Rel(movie_service, kafka, "Публикует события фильмов", "Kafka Protocol")
+
+Rel(kafka, subscription_service, "Подписывается на события платежей", "Kafka Protocol", "Активация подписок при успешной оплате")
+Rel(kafka, subscription_service, "Подписывается на события пользователей", "Kafka Protocol", "Создание подписок при регистрации")
+Rel(kafka, payment_service, "Подписывается на события подписок", "Kafka Protocol", "Автоплатежи при продлении")
+Rel(kafka, movie_service, "Подписывается на события пользователей", "Kafka Protocol", "Связь оценок с пользователями")
+Rel(kafka, user_service, "Подписывается на события платежей", "Kafka Protocol", "Обновление статуса пользователя")
+
+@enduml
+
