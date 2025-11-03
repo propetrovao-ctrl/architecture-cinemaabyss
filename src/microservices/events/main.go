@@ -149,7 +149,7 @@ func handleMovieEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Создаем обертку
+	// Создаем
 	eventWrapper := EventWrapper{
 		ID:        fmt.Sprintf("movie-%d-%s", event.MovieID, event.Action),
 		Type:      "movie",
