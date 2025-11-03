@@ -165,7 +165,5 @@ jobs:
           npm run test:docker
 
       - name: Stop services
-        if: always
+        if: always()
         run: docker compose down
-
-      
