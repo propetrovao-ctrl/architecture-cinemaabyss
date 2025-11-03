@@ -149,9 +149,26 @@ services:
     networks:
       - cinemaabyss-network
 
+  # Kubernetes (KIND - Kubernetes in Docker)
+  kind-control-plane:
+    image: kindest/node:v1.28.0
+    container_name: cinemaabyss-kind-control-plane
+    privileged: true
+    volumes:
+      - kind-data:/var/lib/containerd
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "6443:6443"
+    command:
+      - /usr/local/bin/entrypoint
+      - /sbin/init
+    networks:
+      - cinemaabyss-network
+
 volumes:
   postgres-data:
   jenkins-data:
+  kind-data:
 
 networks:
   cinemaabyss-network:
