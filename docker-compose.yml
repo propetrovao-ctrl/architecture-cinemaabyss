@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
@@ -89,7 +87,6 @@ services:
       dockerfile: Dockerfile
     container_name: cinemaabyss-events-service
     depends_on:
-      - postgres
       - kafka
     ports:
       - "8082:8082"
@@ -136,8 +133,42 @@ services:
     networks:
       - cinemaabyss-network
 
+  # Jenkins CI/CD
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: cinemaabyss-jenkins
+    user: root
+    ports:
+      - "8091:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins-data:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      JENKINS_OPTS: --httpPort=8080
+    networks:
+      - cinemaabyss-network
+
+  # Kubernetes (KIND - Kubernetes in Docker)
+  kind-control-plane:
+    image: kindest/node:v1.28.0
+    container_name: cinemaabyss-kind-control-plane
+    privileged: true
+    volumes:
+      - kind-data:/var/lib/containerd
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "6443:6443"
+    command:
+      - /usr/local/bin/entrypoint
+      - /sbin/init
+    networks:
+      - cinemaabyss-network
+
 volumes:
   postgres-data:
+  jenkins-data:
+  kind-data:
 
 networks:
   cinemaabyss-network:
